@@ -5,7 +5,6 @@ import pytest
 from warehouse_intelligence.pipeline import _write_parquet
 from warehouse_intelligence.synthetic import generate_events
 
-
 pytest.importorskip("pyarrow")
 
 

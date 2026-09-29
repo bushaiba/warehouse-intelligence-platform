@@ -8,7 +8,6 @@ from pathlib import Path
 
 from warehouse_intelligence.models import EventType, WarehouseEvent
 
-
 LOCATIONS = ["RECEIVE-01", "BUFFER-01", "BUFFER-02", "LEVEL-1", "LEVEL-2", "LEVEL-3"]
 STATIONS = [f"ST-{number:03d}" for number in range(1, 25)]
 SKUS = [f"SKU-{number:05d}" for number in range(1, 101)]
