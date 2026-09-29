@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from sqlalchemy import func, select
 
 from warehouse_intelligence.database import (
@@ -70,10 +71,7 @@ def test_duplicate_source_is_idempotent(tmp_path: Path, settings, monkeypatch):
     engine.dispose()
 
 
-
 def test_failed_quality_run_is_recorded(tmp_path: Path, settings, monkeypatch):
-    import pytest
-
     monkeypatch.setattr("warehouse_intelligence.pipeline._write_parquet", _fake_parquet)
     source = write_ndjson(generate_events(count=50, seed=5), tmp_path / "events-bad.ndjson")
     with source.open("a", encoding="utf-8") as handle:
@@ -88,9 +86,7 @@ def test_failed_quality_run_is_recorded(tmp_path: Path, settings, monkeypatch):
         failed_runs = session.scalar(
             select(func.count()).select_from(PipelineRun).where(PipelineRun.status == "failed")
         )
-        failed_run = session.scalar(
-            select(PipelineRun).where(PipelineRun.status == "failed")
-        )
+        failed_run = session.scalar(select(PipelineRun).where(PipelineRun.status == "failed"))
         quality_count = session.scalar(
             select(func.count()).select_from(QualityResult).where(
                 QualityResult.run_id == failed_run.run_id

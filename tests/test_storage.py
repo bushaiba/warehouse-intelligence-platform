@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from warehouse_intelligence.storage import LocalObjectStore, with_retry
 
 
@@ -13,7 +15,6 @@ def test_local_object_store_round_trip(tmp_path: Path):
 
     assert destination.read_text(encoding="utf-8") == "warehouse-data"
     assert len(saved.checksum) == 64
-
 
 
 def test_retry_recovers_from_transient_failure():
@@ -30,8 +31,6 @@ def test_retry_recovers_from_transient_failure():
 
 
 def test_retry_stops_after_limit():
-    import pytest
-
     def broken_operation():
         raise OSError("still broken")
 
