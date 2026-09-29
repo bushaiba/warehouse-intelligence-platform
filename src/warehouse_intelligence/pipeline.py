@@ -159,22 +159,22 @@ def _load_stow_mart(session, events: list[WarehouseEvent]) -> None:
         associate_id = event.associate_id
 
         if event.sku not in sku_keys:
-            dim = DimSku(sku=event.sku)
-            session.add(dim)
+            sku_dim = DimSku(sku=event.sku)
+            session.add(sku_dim)
             session.flush()
-            sku_keys[event.sku] = dim.sku_key
+            sku_keys[event.sku] = sku_dim.sku_key
 
         if station_id not in station_keys:
-            dim = DimStation(station_id=station_id)
-            session.add(dim)
+            station_dim = DimStation(station_id=station_id)
+            session.add(station_dim)
             session.flush()
-            station_keys[station_id] = dim.station_key
+            station_keys[station_id] = station_dim.station_key
 
         if associate_id not in associate_keys:
-            dim = DimAssociate(associate_id=associate_id)
-            session.add(dim)
+            associate_dim = DimAssociate(associate_id=associate_id)
+            session.add(associate_dim)
             session.flush()
-            associate_keys[associate_id] = dim.associate_key
+            associate_keys[associate_id] = associate_dim.associate_key
 
         if session.get(FactStowActivity, event.event_id):
             continue
