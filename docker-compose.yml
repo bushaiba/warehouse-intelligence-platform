@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warehouse -d warehouse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: warehouse
+      MINIO_ROOT_PASSWORD: warehouse123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 warehouse warehouse123; do sleep 1; done;
+      mc mb --ignore-existing local/warehouse-local;
+      exit 0;
+      "
+
+  pipeline:
+    build: .
+    command: ["warehouse-platform", "demo", "--count", "1000", "--seed", "42"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://warehouse:warehouse@postgres:5432/warehouse
+      OBJECT_STORE_BACKEND: s3
+      AWS_REGION: eu-west-2
+      AWS_S3_BUCKET: warehouse-local
+      AWS_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: warehouse
+      AWS_SECRET_ACCESS_KEY: warehouse123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://warehouse:warehouse@postgres:5432/warehouse
+      OBJECT_STORE_BACKEND: s3
+      AWS_REGION: eu-west-2
+      AWS_S3_BUCKET: warehouse-local
+      AWS_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: warehouse
+      AWS_SECRET_ACCESS_KEY: warehouse123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      minio-setup:
+        condition: service_completed_successfully
+      pipeline:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
+  minio_data:
